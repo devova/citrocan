@@ -3,7 +3,6 @@
    Copyright (c) 2016 sisoftrg
    The MIT License (MIT)
 */
-
 #include "stm32f10x.h"
 #include <stdio.h>
 
@@ -20,6 +19,7 @@ int r_buf_w, s_buf_w, s_buf_r;
 uint8_t have_cmd, r_buf[R_BUF_SIZE], s_buf[S_BUF_SIZE];
 
 int ignition = 0;
+int s_count = 0;
 
 #ifdef USE_FULL_ASSERT
 void assert_failed(uint8_t *file, uint32_t line)
@@ -116,6 +116,11 @@ void CFG_CAN(void)
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+	GPIO_Init(GPIOA, &GPIO_InitStructure);
+	
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 
 	CAN_DeInit(CAN1);
@@ -229,10 +234,29 @@ void CFG_USART(void)
 	USART_Cmd(USARTx, ENABLE);
 }
 
+
+void TurnOnPeriphery(void)
+{
+	s_count = 0;
+	GPIO_SetBits(GPIOA, GPIO_Pin_8);
+}
+
+void TurnOffPeriphery(void)
+{
+	s_count = 0;
+	GPIO_ResetBits(GPIOA, GPIO_Pin_8);
+}
+
 void TickHandler(void)
 {
 	if(ignition == 1)
 		ignition = 2;
+	
+	s_count++;
+	
+	if (s_count == 100) {
+		TurnOffPeriphery();
+	}
 }
 
 int main(void)
@@ -240,6 +264,7 @@ int main(void)
 	CFG_USART();
 	CFG_CAN();
 	delay(2000000);
+	TurnOnPeriphery();
 
 	if(SysTick_Config(SystemCoreClock / 10)) { // every 100ms
 		printf("E CLK\r\n");
@@ -260,6 +285,7 @@ int main(void)
 				ignition = r_buf[1] == '1' ? 1 : 0;
 				printf("I\r\n");
 				have_cmd = 0;
+				TurnOnPeriphery();
 				continue;
 			}
 
@@ -271,6 +297,7 @@ int main(void)
 			else
 				printf("E %s\r\n", r_buf);
 			have_cmd = 0;
+			TurnOnPeriphery();
 		}
 		while(c_buf_r != c_buf_w) {
 			CanRxMsg *msg = &RxMessage[c_buf_r];
@@ -279,6 +306,7 @@ int main(void)
 			for(int i = 0; i < msg->DLC; i++)
 				printf(" %02x", msg->Data[i]);
 			printf("\r\n");
+			TurnOnPeriphery();
 		}
 	}
 }
