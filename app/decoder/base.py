@@ -103,6 +103,7 @@ class Decoder(object):
         id = self.fetch_id(id)
         self._callbacks.setdefault(id, []).remove(callback)
 
+
 class DecoderGroup(object):
 
     def __init__(self, decoders, proxy_attributes=False):
