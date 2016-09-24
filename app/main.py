@@ -26,9 +26,9 @@ kivy.require('1.9.0')
 __version__ = '1.0'
 
 BtName = "citr"
-# Port = "/dev/ttyUSB0"
+Port = "/dev/ttyC"
 #Port = "/dev/rfcomm0"
-Port = 'COM13'
+# Port = 'COM13'
 FromFile = None  # "../cl-start"
 
 

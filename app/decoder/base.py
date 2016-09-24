@@ -1,6 +1,7 @@
 import importlib
+import sys
 
-from six import PY3
+PY3 = sys.version_info >= (3, 0)
 
 
 class CallbackException(Exception):
@@ -133,3 +134,8 @@ class DecoderGroup(object):
     def decode(self, id, data_len, data):
         for decoder in self.decoders:
             decoder.decode(id, data, data_len)
+
+    def on(self, id, callback):
+        for decoder in self.decoders:
+            if id in decoder.supported_ids:
+                decoder.on(id, callback)
