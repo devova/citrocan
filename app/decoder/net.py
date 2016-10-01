@@ -5,9 +5,8 @@ from decoder.base import DecoderGroup
 
 class WebSocketDecoder(DecoderGroup):
 
-    def __init__(self, decoders, proxy_attributes=False):
-        super(WebSocketDecoder, self).__init__(
-            decoders, proxy_attributes=proxy_attributes)
+    def __init__(self, *args, **kwargs):
+        super(WebSocketDecoder, self).__init__(*args, **kwargs)
         self._terminate = False
 
     @property
@@ -32,7 +31,7 @@ class WebSocketDecoder(DecoderGroup):
     def on_message(self, buf):
         try:
             flds = buf.split()
-            cid = int(flds[1], 16)
+            cid = flds[1]
             clen = int(flds[2])
             cflds = []
             for n in range(clen):

@@ -17,6 +17,9 @@ class BSIDecoder(Decoder):
     ignition = 0
     lamps = {}
 
+    def decode(self, id, data, data_len=None):
+        super(BSIDecoder, self).decode(id, data, data_len=data_len)
+
     def id_0x036(self, data):
         """
         Ignition
@@ -30,7 +33,7 @@ class BSIDecoder(Decoder):
         """
         Speed info
         """
-        self.rpm = data[0] * 256 + (data[1] >> 3)
+        self.rpm = data[0] * 256 + (data[1] >> 3) - 5300
         self.speed = data[2] * 256 + data[3]
 
     def id_0x0e6(self, data):

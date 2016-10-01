@@ -21,19 +21,24 @@ class Decoder(object):
         instance.supported_ids = ids
         return instance
 
+    def __init__(self, parse_subscribed_only=False):
+        self.parse_subscribed_only = parse_subscribed_only
+
     def __setitem__(self, key, value):
         self.decode(key, value)
 
-    def fetch_id(self, id):
+    def normalize_id(self, id):
         if isinstance(id, int):
-            id = hex(id)
+            return '{0:#0{1}x}'.format(id, 5)
         return id
 
     def decode(self, id, data, data_len=None):
+        id = self.normalize_id(id)
+        if self.parce_subscribed_only and id not in self._callbacks:
+            return
         if not data_len:
             data_len = len(data)
         data = data[:data_len]
-        id = self.fetch_id(id)
         if id in self.supported_ids:
             f = getattr(self, 'id_%s' % id)
             f(data)
@@ -94,20 +99,21 @@ class Decoder(object):
         """
         Start listen for message with given id. Call callback when id has parsed
         """
-        id = self.fetch_id(id)
+        id = self.normalize_id(id)
         self._callbacks.setdefault(id, []).append(callback)
 
     def off(self, id, callback):
         """
         Stop listen for message with given id and given callback
         """
-        id = self.fetch_id(id)
+        id = self.normalize_id(id)
         self._callbacks.setdefault(id, []).remove(callback)
 
 
 class DecoderGroup(object):
 
-    def __init__(self, decoders, proxy_attributes=False):
+    def __init__(self, decoders, proxy_attributes=False,
+                 parse_subscribed_only=False):
         self._decoders = []
         self.proxy_attributes = proxy_attributes
         for decoder in decoders:
@@ -115,7 +121,8 @@ class DecoderGroup(object):
             module = importlib.import_module(module)
             attr_name = cls[:-7] if cls.endswith('Decoder') else cls
             attr_name = attr_name.lower()
-            attr = getattr(module, cls)()
+            attr = getattr(module, cls)(
+                parse_subscribed_only=parse_subscribed_only)
             self._decoders.append(attr_name)
             setattr(self, attr_name, attr)
 
