@@ -10,9 +10,15 @@ class CallbackException(Exception):
     """
 
 
+class TransportInterface(object):
+    def send_message(self, id, data):
+        raise NotImplementedError
+
+
 class Decoder(object):
     _callbacks = {}
     mfs = {}
+    transport = None
 
     def __new__(cls, *args, **kwargs):
         instance = object.__new__(cls, *args)
@@ -21,8 +27,10 @@ class Decoder(object):
         instance.supported_ids = ids
         return instance
 
-    def __init__(self, parse_subscribed_only=False):
+    def __init__(self, transport=None, parse_subscribed_only=False):
         self.parse_subscribed_only = parse_subscribed_only
+        if isinstance(transport, TransportInterface):
+            self.transport = transport
 
     def __setitem__(self, key, value):
         self.decode(key, value)
@@ -49,6 +57,10 @@ class Decoder(object):
                     raise CallbackException
         else:
             self.id_else(id, data)
+
+    def send(self, id, data):
+        if self.transport:
+            self.transport.send_message(id, data)
 
     def id_else(self, id, data):
         pass

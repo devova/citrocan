@@ -1,12 +1,14 @@
 import websocket
 
-from decoder.base import DecoderGroup
+from decoder.base import DecoderGroup, TransportInterface
 
 
-class WebSocketDecoder(DecoderGroup):
+class WebSocketDecoder(DecoderGroup, TransportInterface):
 
     def __init__(self, *args, **kwargs):
         super(WebSocketDecoder, self).__init__(*args, **kwargs)
+        for decoder in self.decoders:
+            decoder.transport = self
         self._terminate = False
 
     @property
@@ -41,3 +43,8 @@ class WebSocketDecoder(DecoderGroup):
             self.update = True
         except (TypeError, ValueError, IndexError) as e:
             print("can't decode:", buf, e)
+
+    def send_message(self, id, data):
+        buf = 'S %s %s ' % (id, len(data))
+        buf += ' '.join(hex(b) for b in data)
+        self.sock.send(buf)
